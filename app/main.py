@@ -6,7 +6,7 @@ from app.database.conn import db
 from app.database.schema import Base
 from app.common.config import conf
 
-from app.routes import index
+from app.routes import index, auth
 
 
 def create_app():
@@ -16,7 +16,7 @@ def create_app():
     conf_dict = asdict(c)  # conf 클래스를 dict로 가져와서 사용. unpacking 한것.
     db.init_app(_app, **conf_dict)
     # print(Base.metadata.tables)
-    Base.metadata.create_all(db.engine)
+    Base.metadata.create_all(db.engine)  # 없는 테이블이 있으면 만든다.
 
     # 데이터 베이스 init
 
@@ -26,6 +26,7 @@ def create_app():
 
     # 라우터 정의
     _app.include_router(index.router)
+    _app.include_router(auth.router, tags=['Authentication'], prefix='/auth')
     return _app
 
 

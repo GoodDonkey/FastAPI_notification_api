@@ -12,7 +12,7 @@ class Config:
     BASE_DIR = base_dir  # /FastAPI 를 가리킴
 
     DB_POOL_RECYCLE: int = 900
-    DB_ECHO: bool = True  # db 생성, 데이터 갱신시 에코
+    DB_ECHO: bool = False  # db 생성, 데이터 갱신시 에코
 
 
 @dataclass
