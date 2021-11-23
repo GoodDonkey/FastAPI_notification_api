@@ -20,11 +20,14 @@ class Config:
 class LocalConfig(Config):
     PROJ_RELOAD: bool = True
     DB_URL: str = "mysql+pymysql://root:admin@localhost/Fast_API?charset=utf8mb4"
+    TRUSTED_HOST = ["*"]
+    ALLOW_SITE = ["*"]
 
 
 @dataclass
 class ProdConfig(Config):
     PROJ_RELOAD: bool = False
+    ALLOW_SITE = ["*"]
 
 
 def conf():
