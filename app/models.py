@@ -3,6 +3,8 @@ from enum import Enum
 from pydantic.main import BaseModel
 from pydantic.networks import EmailStr
 
+""" 요청을 받거나 반응을 보낼 때 아래 클래스에 정의된 대로 json 형태로 만들어 소통한다."""
+
 
 class UserRegister(BaseModel):
     """ 여기 모델로 정의하여 사용하면 request를 받을 때 json 포맷으로 만들어 준다. """

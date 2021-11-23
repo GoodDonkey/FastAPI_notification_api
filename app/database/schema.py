@@ -47,7 +47,7 @@ class BaseMixin:
 
     @classmethod
     def get(cls, **kwargs):
-        """ select하는 것. """
+        """ select하는 것. 1개의 값을 가졍올 때 사용."""
         session = next(db.session())
         query = session.query(cls)
         for key, val in kwargs.items():

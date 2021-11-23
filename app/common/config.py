@@ -4,11 +4,12 @@ from os import path, environ
 base_dir = path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
 print(base_dir)
 
-""" dict 형태로 쓰기 위해 dataclass로 감싼다.
-"""
+""" dict 형태로 쓰기 위해 dataclass로 감싼다. """
+
+
 @dataclass
 class Config:
-    """ 기본 Configuration"""
+    """ 기본 Configuration """
     BASE_DIR = base_dir  # /FastAPI 를 가리킴
 
     DB_POOL_RECYCLE: int = 900
