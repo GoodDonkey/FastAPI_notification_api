@@ -54,7 +54,6 @@ class TrustedHostMiddleware:
                 break
             elif "www." + host == pattern:
                 found_www_redirect = True
-
         if is_valid_host:
             await self.app(scope, receive, send)
         else:
