@@ -36,11 +36,11 @@ async def access_control(request: Request, call_next):
         return response
 
     try:
-        print('5')
+        print("token_validator: 5")
 
         if url.startswith("/api"):
             # api 인경우 헤더로 토큰 검사
-            print('1')
+            print("token_validator: 1")
             if "authorization" in headers.keys():
                 token_info = await token_decode(access_token=request.headers.get("Authorization"))
                 request.state.user = UserToken(**token_info)
@@ -51,29 +51,29 @@ async def access_control(request: Request, call_next):
                     print("headers", request.headers)
                     raise ex.NotAuthorized()
         else:
-            print('6')
+            print("token_validator: 6")
             # 템플릿 렌더링인 경우 쿠키에서 토큰 검사: 프론트 고려한 구문
             print("cookies", request.cookies)
             request.cookies["Authorization"] = "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6OSwiZW1haWwiOiJkb25rZXlAZXhhbXBsZS5jb20iLCJuYW1lIjpudWxsLCJwaG9uZV9udW1iZXIiOm51bGwsInByb2ZpbGVfaW1nIjpudWxsLCJzbnNfdHlwZSI6bnVsbH0.6yIY-1mhYQNxBNDBZCQrGKe7N3Tg4BMhTAbFnCH1rWA"
 
             if "Authorization" not in cookies.keys():
-                print('3')
+                print("token_validator: 3")
                 raise ex.NotAuthorized()
 
             token_info = await token_decode(access_token=cookies.get("Authorization"))
             request.state.user = UserToken(**token_info)
 
         response = await call_next(request)  # 토큰 검사가 끝난 후 함수 실행 (다음 미들웨어 또는 endpoint 함수 등)
-        print('7', response)
+        print("token_validator: 7", response)
         await api_logger(request=request, response=response)
     except Exception as e:
-        print('4')
+        print("token_validator: 4")
         error = await exception_handler(e)
         error_dict = dict(status=error.status_code, msg=error.msg, detail=error.detail, code=error.code)
         print(error_dict)
         response = JSONResponse(status_code=error.status_code, content=error_dict)
         await api_logger(request=request, error=error)
-    print('8')
+    print("token_validator: 8")
     return response
 
 
