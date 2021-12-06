@@ -16,8 +16,6 @@ async def api_logger(request: Request, response=None, error=None):
     status_code = error.status_code if error else response.status_code
     error_log = None
     user = request.state.user
-    print(user)
-    body = await request.body()
     print("api_logger 1-1")
     if error:
         print("api_logger 2")
@@ -57,9 +55,6 @@ async def api_logger(request: Request, response=None, error=None):
         datetimeUTC=datetime.utcnow().strftime(time_format),
         datetimeKST=(datetime.utcnow() + timedelta(hours=9)).strftime(time_format),
     )
-    if body:
-        print("api_logger 5")
-        log_dict["body"] = body
     if error and error.status_code >= 500:
         print("api_logger 6")
         logger.error(json.dumps(log_dict))
