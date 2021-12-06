@@ -20,6 +20,5 @@ async def get_user(request: Request):
     """
     user = request.state.user
     user_info = Users.get(id=user.id)
-    raise NotFoundUserEx(user_info.id)
     return user_info
 

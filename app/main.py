@@ -3,6 +3,7 @@ from dataclasses import asdict
 import uvicorn
 from fastapi import FastAPI, Depends
 from fastapi.security import APIKeyHeader
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
 
 from app.common.consts import EXCEPT_PATH_LIST, EXCEPT_PATH_REGEX
@@ -10,7 +11,7 @@ from app.database.conn import db
 from app.database.schema import Base
 from app.common.config import conf
 
-from app.middlewares.token_validator import AccessControl
+from app.middlewares.token_validator import access_control
 from app.middlewares.trusted_hosts import TrustedHostMiddleware
 
 from app.routes import index, auth, users
@@ -33,9 +34,8 @@ def create_app():
     # 래디스 init
 
     # 미들웨어 정의 (순서 중요. AccessControl이 가장 마지막에 등록되어야 한다고 함. (가장 위가 가장 마지막))
-    _app.add_middleware(AccessControl,
-                        except_path_list=EXCEPT_PATH_LIST,
-                        except_path_regex=EXCEPT_PATH_REGEX,
+    _app.add_middleware(middleware_class=BaseHTTPMiddleware,
+                        dispatch=access_control
                         )
     _app.add_middleware(CORSMiddleware,
                         allow_origins=conf().ALLOW_SITE,
@@ -50,6 +50,7 @@ def create_app():
 
     # 라우터 정의
     _app.include_router(index.router)
+    print('9')
     _app.include_router(auth.router, tags=['Authentication'], prefix='/auth')
     _app.include_router(users.router, tags=["Users"], prefix="/api", dependencies=[Depends(API_KEY_HEADER)])
     return _app
