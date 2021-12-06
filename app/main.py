@@ -1,7 +1,7 @@
 from dataclasses import asdict
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.security import APIKeyHeader
 from starlette.middleware.cors import CORSMiddleware
 
@@ -13,7 +13,7 @@ from app.common.config import conf
 from app.middlewares.token_validator import AccessControl
 from app.middlewares.trusted_hosts import TrustedHostMiddleware
 
-from app.routes import index, auth
+from app.routes import index, auth, users
 
 # docs에서 토큰을 넣어 요청하는 버튼을 만들기 위해 생성.
 API_KEY_HEADER = APIKeyHeader(name="Authorization", auto_error=False)
@@ -51,7 +51,7 @@ def create_app():
     # 라우터 정의
     _app.include_router(index.router)
     _app.include_router(auth.router, tags=['Authentication'], prefix='/auth')
-    _app.include_router(users.router)
+    _app.include_router(users.router, tags=["Users"], prefix="/api", dependencies=[Depends(API_KEY_HEADER)])
     return _app
 
 

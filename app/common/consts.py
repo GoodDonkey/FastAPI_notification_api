@@ -4,4 +4,4 @@ JWT_SECRET = "donkey"  # 여기서는 임의로 지정하였지만, 나중엔 AW
 JWT_ALGORITHM = "HS256"
 
 EXCEPT_PATH_LIST = ["/", "/openapi.json"]
-EXCEPT_PATH_REGEX = "^(/docs|/redoc|/auth)"
+EXCEPT_PATH_REGEX = "^(/docs|/redoc|/api/auth)"
