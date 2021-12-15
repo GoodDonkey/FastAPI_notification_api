@@ -37,7 +37,6 @@ async def access_control(request: Request, call_next):
 
     try:
         print("token_validator: 5")
-
         if url.startswith("/api"):
             # api 인경우 헤더로 토큰 검사
             print("token_validator: 1")

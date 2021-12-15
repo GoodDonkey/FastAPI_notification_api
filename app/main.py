@@ -8,7 +8,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from app.common.consts import EXCEPT_PATH_LIST, EXCEPT_PATH_REGEX
 from app.database.conn import db
-from app.database.schema import Base
+from app.database.schema import Base, ApiKeys
 from app.common.config import conf
 
 from app.middlewares.token_validator import access_control
@@ -28,6 +28,7 @@ def create_app():
     db.init_app(_app, **conf_dict)
     # print(Base.metadata.tables)
     Base.metadata.create_all(db.engine)  # 없는 테이블이 있으면 만든다.
+    # ApiKeys.__table__.create(db.engine, checkfirst=True)
 
     # 데이터 베이스 init
 

@@ -8,7 +8,7 @@ from sqlalchemy import (
     func,
     Enum, Boolean, ForeignKey,
 )
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, relationship
 
 from app.database.conn import Base, db
 
@@ -22,6 +22,8 @@ class BaseMixin:
         """ init 은 실행되지 않는다. 다만 아래 변수를 쓸 것이라고 알리기 위해 정의해 두었다. """
         self._q = None
         self._session = None
+        self.served = None
+
 
     def all_columns(self):
         """ 테이블에 있는 모든 칼럼을 받아서 list로 반환한다."""
@@ -95,10 +97,10 @@ class BaseMixin:
         obj = cls()
         if session:
             obj._session = session
-            obj._sess_served = True
+            obj.served = True
         else:
             obj._session = next(db.session())
-            obj._sess_served = False
+            obj.served = False
         query = obj._session.query(cls)
         query = query.filter(*cond)
         obj._q = query  # filter 는 직접 쿼리해서 반환하지 않기 때문에 일단 담아 둔 다음 아래 메서드들에서 쿼리를 마친다.
@@ -124,15 +126,17 @@ class BaseMixin:
             self._q = self._q.order_by(col.asc()) if is_asc else self._q.order_by(col.desc())
         return self
 
-    def update(self, sess: Session = None, auto_commit: bool = False, **kwargs):
-        cls = self.cls_attr()
-        if sess:
-            query = sess.query(cls)
-        else:
-            sess = next(db.session())
-            query = sess.query(cls)
-        self.close()
-        return query.update(**kwargs)
+    def update(self, auto_commit: bool = False, **kwargs):
+        qs = self._q.update(kwargs)
+        get_id = self.id
+        ret = None
+
+        self._session.flush()
+        if qs > 0:
+            ret = self._q.first()
+        if auto_commit:
+            self._session.commit()
+        return ret
 
     def first(self):
         result = self._q.first()
@@ -146,6 +150,7 @@ class BaseMixin:
         self.close()
 
     def all(self):
+        print(self.served)
         result = self._q.all()
         self.close()
         return result
@@ -164,8 +169,7 @@ class BaseMixin:
         return q_dict
 
     def close(self):
-        if self._sess_served:
-            self._session.commit()
+        if not self.served:
             self._session.close()
         else:
             self._session.flush()
@@ -193,3 +197,11 @@ class ApiKeys(Base, BaseMixin):
     status = Column(Enum("active", "stopped", "deleted"), default="active")
     is_whitelisted = Column(Boolean, default=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    whitelist = relationship("ApiWhiteLists", backref="api_keys")
+
+
+class ApiWhiteLists(Base, BaseMixin):
+    __tablename__ = "api_whitelists"
+    ip_addr = Column(String(length=64), nullable=False)
+    api_key_id = Column(Integer, ForeignKey("api_keys.id"), nullable=False)
+
