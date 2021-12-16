@@ -15,6 +15,7 @@ class Config:
     DB_POOL_RECYCLE: int = 900
     DB_ECHO: bool = False  # db 생성, 데이터 갱신시 에코
     DEBUG = False
+    TEST_MODE: bool = False
 
 
 @dataclass
@@ -32,7 +33,15 @@ class ProdConfig(Config):
     ALLOW_SITE = ["*"]
 
 
+@dataclass
+class TestConfig(Config):
+    DB_URL: str = "mysql+pymysql://root:admin@localhost/Fast_API_test2?charset=utf8mb4"
+    TRUSTED_HOST = ["*"]
+    ALLOW_SITE = ["*"]
+    TEST_MODE: bool = True
+
+
 def conf():
     """ 환경 불러오기"""
-    config = dict(prod=ProdConfig(), local=LocalConfig())
-    return config.get(environ.get("API_ENV", "local"))
+    config = dict(prod=ProdConfig, local=LocalConfig, test=TestConfig)
+    return config[environ.get("API_ENV", "local")]()
