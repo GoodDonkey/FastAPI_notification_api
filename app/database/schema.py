@@ -53,10 +53,10 @@ class BaseMixin:
         return obj
 
     @classmethod
-    def get(cls, **kwargs):
+    def get(cls, session: Session = None, **kwargs):
         """ select하는 것. 1개의 값을 가졍올 때 사용."""
-        session = next(db.session())
-        query = session.query(cls)
+        sess = next(db.session()) if not session else session
+        query = sess.query(cls)
         for key, val in kwargs.items():
             col = getattr(cls, key)
             query = query.filter(col == val)
@@ -64,7 +64,8 @@ class BaseMixin:
         if query.count() > 1:
             raise Exception("1개의 값만 리턴 가능합니다. 2개 이상이 검색되었습니다.")
         result = query.first()
-        session.close()
+        if not session:  # ? 세션을 안넣어줬으면 클로즈?
+            sess.close()
         return result
 
     @classmethod
@@ -95,6 +96,7 @@ class BaseMixin:
                 cond.append((col.in_(val)))
 
         obj = cls()
+        print("obj", obj)
         if session:
             obj._session = session
             obj.served = True
@@ -150,7 +152,7 @@ class BaseMixin:
         self.close()
 
     def all(self):
-        print(self.served)
+        # print(self.served)
         result = self._q.all()
         self.close()
         return result
@@ -176,8 +178,7 @@ class BaseMixin:
 
 
 class Users(Base, BaseMixin):
-    """ Base는 conn에 객체로 정의한 sqlalchemy의 declarative_base()임
-    """
+    """ Base는 conn에 객체로 정의한 sqlalchemy의 declarative_base()임 """
     __tablename__ = "users"
     status = Column(Enum("active", "deleted", "blocked"), default="active")
     email = Column(String(length=255), nullable=True)
@@ -187,6 +188,8 @@ class Users(Base, BaseMixin):
     profile_img = Column(String(length=1000), nullable=True)
     sns_type = Column(Enum("FB", "G", "K"), nullable=True)
     marketing_agree = Column(Boolean, nullable=True, default=True)
+    keys = relationship("ApiKeys", back_populates="users")  # 참조만 해서 마이그레이션 해줄 필요가 없다
+
 
 
 class ApiKeys(Base, BaseMixin):
@@ -198,6 +201,7 @@ class ApiKeys(Base, BaseMixin):
     is_whitelisted = Column(Boolean, default=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     whitelist = relationship("ApiWhiteLists", backref="api_keys")
+    users = relationship("Users", back_populates="keys")
 
 
 class ApiWhiteLists(Base, BaseMixin):
