@@ -14,6 +14,7 @@ class Config:
 
     DB_POOL_RECYCLE: int = 900
     DB_ECHO: bool = False  # db 생성, 데이터 갱신시 에코
+    DEBUG = False
 
 
 @dataclass
@@ -22,6 +23,7 @@ class LocalConfig(Config):
     DB_URL: str = "mysql+pymysql://root:admin@localhost/Fast_API?charset=utf8mb4"
     TRUSTED_HOST = ["*"]
     ALLOW_SITE = ["*"]
+    DEBUG = True
 
 
 @dataclass

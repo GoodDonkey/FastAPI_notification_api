@@ -53,7 +53,10 @@ def create_app():
     _app.include_router(index.router)
     print('9')
     _app.include_router(auth.router, tags=['Authentication'], prefix='/auth')
-    _app.include_router(services.router, tags=["Services"], prefix="/api")
+    if conf().DEBUG:
+        _app.include_router(services.router, tags=["Services"], prefix="/api", dependencies=[Depends(API_KEY_HEADER)])
+    else:
+        _app.include_router(services.router, tags=["Services"], prefix="/api")
     _app.include_router(users.router, tags=["Users"], prefix="/api", dependencies=[Depends(API_KEY_HEADER)])
     return _app
 

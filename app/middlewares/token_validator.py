@@ -12,10 +12,10 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-from app.common import consts
+from app.common import consts, config
 from app.common.consts import EXCEPT_PATH_REGEX
 from app.database.conn import db
-from app.database.schema import ApiKeys
+from app.database.schema import ApiKeys, Users
 from app.errors import exceptions as ex
 from app.errors.exceptions import APIException, SqlFailureEx
 from app.models import UserToken
@@ -49,53 +49,67 @@ async def access_control(request: Request, call_next):
             if url.startswith("/api/services"):
                 qs = str(request.query_params)  # http://example.com/aaa?abc=123&xyz=456 에서 ?뒤가 params
                 qs_list = qs.split("&")
-
-                try:
-                    # query_params 를 key value 로 잘라서 dict에 저장.
-                    qs_dict = {qs_split.split("=")[0]: qs_split.split("=")[1] for qs_split in qs_list}
-                except Exception:
-                    raise ex.APIQueryStringEx()
-
-                qs_keys = qs_dict.keys()
-                if "key" not in qs_keys or "timestamp" not in qs_keys:
-                    raise ex.APIQueryStringEx()
-
-                # if "secret" not in headers.keys():
-                #     raise ex.APIHeaderInvalidEx()
                 session = next(db.session())  # 여기서는 db 세션을 직접 가져오지만 느리므로 나중엔 redis로 대체할 예정.
-                api_key = ApiKeys.get(session=session, access_key=qs_dict["key"])
-                if not api_key:
-                    raise ex.NotFoundAccessKeyEx(api_key=qs_dict["key"])
 
-                    # hmac은 해싱 패키지. "key", "timestampe" 를 해싱한다.
-                    # 해싱후 base64로 만들고 utf-8 로 인코딩하여 문자열로 만듬.
-                mac = hmac.new(bytes(api_key.secret_key, encoding='utf8'), bytes(qs, encoding='utf-8'), digestmod='sha256')
-                d = mac.digest()
-                validating_secret = str(base64.b64encode(d).decode('utf-8'))
+                if not config.conf().DEBUG:  # DEBUG가 False 이면
+                    try:
+                        # query_params 를 key value 로 잘라서 dict에 저장.
+                        qs_dict = {qs_split.split("=")[0]: qs_split.split("=")[1] for qs_split in qs_list}
+                    except Exception:
+                        raise ex.APIQueryStringEx()
 
-                if headers["secret"] != validating_secret:
-                    raise ex.APIHeaderInvalidEx()
+                    qs_keys = qs_dict.keys()
 
-                now_timestamp = int(D.datetime(diff=9).timestamp())  # diff=9 : 한국시간 얻기
-                    # timestamp의 10초 이전 요청까지만 허용. Replay attack을 막기 위함.
-                if now_timestamp - 10 > int(qs_dict["timestamp"]) or now_timestamp < int(qs_dict["timestamp"]):
-                    raise ex.APITimestampEx()
+                    if "key" not in qs_keys or "timestamp" not in qs_keys:
+                        raise ex.APIQueryStringEx()
 
-                user_info = to_dict(api_key.users)
-                request.state.user = UserToken(**user_info)
+                    if "secret" not in headers.keys():
+                        raise ex.APIHeaderInvalidEx()
+
+                    api_key = ApiKeys.get(session=session, access_key=qs_dict["key"])
+
+                    if not api_key:
+                        raise ex.NotFoundAccessKeyEx(api_key=qs_dict["key"])
+                        # hmac은 해싱 패키지. "key", "timestampe" 를 해싱한다.
+                        # 해싱후 base64로 만들고 utf-8 로 인코딩하여 문자열로 만듬.
+                    mac = hmac.new(bytes(api_key.secret_key, encoding='utf8'), bytes(qs, encoding='utf-8'), digestmod='sha256')
+                    d = mac.digest()
+                    validating_secret = str(base64.b64encode(d).decode('utf-8'))
+
+                    if headers["secret"] != validating_secret:
+                        raise ex.APIHeaderInvalidEx()
+
+                    now_timestamp = int(D.datetime(diff=9).timestamp())  # diff=9 : 한국시간 얻기
+                        # timestamp의 10초 이전 요청까지만 허용. Replay attack을 막기 위함.
+                    if now_timestamp - 10 > int(qs_dict["timestamp"]) or now_timestamp < int(qs_dict["timestamp"]):
+                        raise ex.APITimestampEx()
+
+                    user_info = to_dict(api_key.users)
+                    request.state.user = UserToken(**user_info)
+
+                else:  # DEBUG가 True 이면 Request User
+                    if "authorization" in headers.keys():
+                        key = headers.get("Authorization")
+                        api_key_obj = ApiKeys.get(session=session, access_key=key)
+                        user_info = to_dict(Users.get(session=session, id=api_key_obj.user_id))
+                        request.state.user = UserToken(**user_info)
+                    else:
+                        if "authorization" not in headers.keys():
+                            raise ex.NotAuthorized()
                 session.close()
                 response = await call_next(request)
                 return response
 
-            else:
-                if "authorization" in headers.keys():
+            else:  # api/service 가 아니면
+                if "Authorization" in headers.keys():  # 토큰이 있으면
                     token_info = await token_decode(access_token=request.headers.get("Authorization"))
                     request.state.user = UserToken(**token_info)
-                    # 토큰 없음
-                else:
+
+                else:  # 토큰이 없으면
                     if "Authorization" not in headers.keys():
                         print("headers", request.headers)
                         raise ex.NotAuthorized()
+
         else:
             print("token_validator: 6")
             # 템플릿 렌더링인 경우 쿠키에서 토큰 검사: 프론트 고려한 구문
