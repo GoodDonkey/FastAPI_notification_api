@@ -16,12 +16,12 @@ class Config:
     DB_ECHO: bool = False  # db 생성, 데이터 갱신시 에코
     DEBUG = False
     TEST_MODE: bool = False
+    DB_URL: str = environ.get("DB_URL", "mysql+pymysql://root:admin@localhost/Fast_API?charset=utf8mb4")
 
 
 @dataclass
 class LocalConfig(Config):
     PROJ_RELOAD: bool = True
-    DB_URL: str = "mysql+pymysql://root:admin@localhost/Fast_API?charset=utf8mb4"
     TRUSTED_HOST = ["*"]
     ALLOW_SITE = ["*"]
     DEBUG = True
