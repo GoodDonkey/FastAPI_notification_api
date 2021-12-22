@@ -1,12 +1,8 @@
 # ------------------------------------------------------------------------------
-# Base image
-# ------------------------------------------------------------------------------
-FROM python:3.8-slim AS base
-
-# ------------------------------------------------------------------------------
 # Install dependencies
 # ------------------------------------------------------------------------------
-FROM base AS deps
+# Base image
+FROM python:3.8-slim
 COPY requirements.txt ./
 RUN apt update > /dev/null && \
         apt install -y build-essential && \
@@ -15,11 +11,11 @@ RUN apt update > /dev/null && \
 # ------------------------------------------------------------------------------
 # Final image
 # ------------------------------------------------------------------------------
-FROM base
+FROM python:3.8-slim
 WORKDIR /usr/src/app
 COPY . /usr/src/app
 
-COPY --from=deps /root/.cache /root/.cache
+COPY --from=0 /root/.cache /root/.cache
 RUN pip install --disable-pip-version-check -r requirements.txt && \
         rm -rf /root/.cache
 
