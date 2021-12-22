@@ -1,4 +1,4 @@
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from os import path, environ
 
 base_dir = path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
@@ -31,6 +31,7 @@ class LocalConfig(Config):
 class ProdConfig(Config):
     PROJ_RELOAD: bool = False
     ALLOW_SITE = ["*"]
+    TRUSTED_HOST = ["*"]
 
 
 @dataclass

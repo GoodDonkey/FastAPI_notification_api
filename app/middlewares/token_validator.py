@@ -1,16 +1,13 @@
 import base64
+import hmac
 import re
 import time
-import hmac
-import typing
 
 import jwt
 import sqlalchemy.exc
-from jwt import PyJWTError, ExpiredSignatureError, DecodeError
-from starlette.datastructures import Headers
+from jwt import ExpiredSignatureError, DecodeError
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.common import consts, config
 from app.common.consts import EXCEPT_PATH_REGEX
