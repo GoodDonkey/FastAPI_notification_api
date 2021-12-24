@@ -86,7 +86,7 @@ async def access_control(request: Request, call_next):
 
                 else:  # DEBUG가 True 이면 Request User
                     if "authorization" in headers.keys():
-                        key = headers.get("Authorization")
+                        key = headers.get("authorization")
                         api_key_obj = ApiKeys.get(session=session, access_key=key)
                         user_info = to_dict(Users.get(session=session, id=api_key_obj.user_id))
                         request.state.user = UserToken(**user_info)
@@ -98,12 +98,12 @@ async def access_control(request: Request, call_next):
                 return response
 
             else:  # api/service 가 아니면
-                if "Authorization" in headers.keys():  # 토큰이 있으면
+                if "authorization" in headers.keys():  # 토큰이 있으면
                     token_info = await token_decode(access_token=request.headers.get("Authorization"))
                     request.state.user = UserToken(**token_info)
 
                 else:  # 토큰이 없으면
-                    if "Authorization" not in headers.keys():
+                    if "authorization" not in headers.keys():
                         print("headers", request.headers)
                         raise ex.NotAuthorized()
 
