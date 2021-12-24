@@ -19,13 +19,16 @@ router = APIRouter(prefix='/services')
 
 @router.get('')
 async def get_all_services(request: Request):
-    """ Api Key의 access_key를 주면 누구인지 email을 반환한다.
-        반드시 로컬에서만 사용할 것. """
+    """ Api Key의 access_key를 주면 누구인지 email을 반환한다.\n
+        로컬 환경에서만 사용할 수 있습니다. """
     return dict(your_email=request.state.user.email)
 
 
 @router.post('/kakao/send')
 async def send_kakao(request: Request, body_param: KakaoMsgBody):
+    """ 카카오 메시지를 보냄.\n
+        Kakao api의 토큰이 필요하다.\n
+        로컬 환경에서만 테스트 가능."""
     token = os.environ.get("KAKAO_KEY", "1qDf2uClCgDZuurq4XJKXJtyk2b35xcTiWcHSQo9cxgAAAF9zA8DMA")
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/x-www-form-urlencoded"}
 
@@ -98,7 +101,9 @@ email_content = """
 
 @router.post("email/send_by_gmail")
 async def email_by_gmail(request: Request, mailing_list: SendEmail):
-    """ 일반적인 방법. 6초정도 걸림 """
+    """ 일반적인 방법. 6초정도 걸림\n
+        바디로 받을 이메일주소(목적지 이메일)을 받는다.\n
+        이메일 주소(출발지 주소), 비밀번호가 환경변수로 필요하다. """
     t = time()
     _send_email(mailing_list=mailing_list.email_to)
     print("+*+*" * 30)
@@ -109,6 +114,8 @@ async def email_by_gmail(request: Request, mailing_list: SendEmail):
 
 @router.post("email/send_by_gmail2")
 async def email_by_gmail2(request: Request, mailing_list: SendEmail, background_tasks: BackgroundTasks):
+    """ backgrround_task를 이용한 메일 보내기.\n
+        이메일 주소(출발지 주소), 비밀번호가 환경변수로 필요하다."""
     t = time()
     background_tasks.add_task(
             _send_email, mailing_list=mailing_list.email_to
@@ -120,6 +127,7 @@ async def email_by_gmail2(request: Request, mailing_list: SendEmail, background_
 
 
 def _send_email(**kwargs):
+    """  이메일 주소(출발지 주소), 비밀번호가 환경변수로 필요하다."""
     mailing_list = kwargs.get("mailing_list", None)
     email_pw = os.environ.get("EMAIL_PW", None)
     email_addr = os.environ.get("EMAIL_ADDR", None)
@@ -143,9 +151,10 @@ def _send_email(**kwargs):
 
 @router.post("email/send_by_ses")
 async def email_by_ses():
+    """ AWS access, secret key가 환경변수로 필요하다."""
     # sender = "Ryan Name <sender@d9.is>"
     # sender = "Ryan =?UTF-8?B?65287J207Ja4?= <sender@d9.is>"
-    # sender = "Ryan 라이언 <sender@d9.is>"
+    # sender = "Ryan 한글 <sender@d9.is>"
     sender = "donkey Name <president20500@gmail.com>"
     recipient = ["president20500@gmail.com"]
 
